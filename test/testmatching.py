@@ -1,34 +1,44 @@
+# -*- coding: utf-8 -*-
+
 import nose.tools as nt
-from pyee import Event_emitter, EventEmitter
+from pyee import Event_emitter, EventEmitter, PatternException
 from tests import ItWorkedException
 
+import q
 
-def test_patterns():
-    """
-    Test that patterns are correctly interpreted
-    """
+
+def test_is_pattern():
+    ee = EventEmitter()
+    assert ee._isPattern('a/#')
+    assert ee._isPattern('a/+/+')
+    assert not ee._isPattern('a/#/+')
+    assert not ee._isPattern('a/c+/c')
+    assert not ee._isPattern('a/#/c')
+
+
+def test_pattern_matching():
+    """Test that patterns are correctly interpreted"""
     ee = EventEmitter()
     assert ee._matches('#', 'a/b/c')
-    assert ee._matches('#/b/c', 'a/b/c')
+    assert ee._matches('+/b/c', 'a/b/c')
     assert ee._matches('a/#', 'a/b/c')
     assert not ee._matches('a/#', 'c/a/b/c')
-    assert not ee._matches('#/b/c', 'c')
-    assert not ee._matches('a/#/d/e', 'a/b/c/d/e')
+    with nt.assert_raises(PatternException) as e:
+        ee._matches('#/b/c', 'c')
+    assert not ee._matches('a/+/d/e', 'a/b/c/d/e')
 
 
 def test_matching_topic():
-    """
-    Test that a pattern can be passed as an event
-    """
+    """Test that a pattern can be passed as an event"""
 
     ee = Event_emitter()
 
-    @ee.on('event/#/ok')
+    @ee.on('event/+/ok')
     def event_handler():
         raise ItWorkedException
 
     with nt.assert_raises(ItWorkedException) as it_worked:
-        ee.emit('event/first/ok')
+        q | ee.emit('event/first/ok')
 
     with nt.assert_raises(ItWorkedException) as it_worked:
         ee.emit('event/second/ok')
@@ -37,9 +47,8 @@ def test_matching_topic():
 
 
 def test_shorter_pattern():
-    """
-    Tests correct behaviour with shorter patterns
-    """
+    """Tests correct behaviour with shorter patterns"""
+
     ee = EventEmitter()
 
     @ee.on('#')
@@ -54,9 +63,7 @@ def test_shorter_pattern():
 
 
 def test_longer_pattern():
-    """
-    Tests correct behaviour with longer patterns
-    """
+    """Tests correct behaviour with longer patterns"""
 
     ee = EventEmitter()
 
@@ -66,7 +73,7 @@ def test_longer_pattern():
 
     ee.emit('c')
 
-    @ee.on('#/a/b')
+    @ee.on('+/a/b')
     def event_handler():
         raise ItWorkedException('c and #/a/b')
 

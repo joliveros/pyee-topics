@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 pyee
 ====
@@ -34,6 +35,9 @@ Easy-peasy.
 
 """
 
+
+class PatternException(Exception):
+    pass
 
 from collections import defaultdict
 
@@ -91,7 +95,7 @@ class EventEmitter(object):
             self.emit('new_listener', event, f)
 
             # Add the necessary function
-            if '#' in event:
+            if self._isPattern(event):
                 self._patterns[event].append(f)
             else:
                 self._events[event].append(f)
@@ -135,13 +139,20 @@ class EventEmitter(object):
 
         return handled
 
+    def _isPattern(self, pattern):
+        """is there any /+/ or /#/ in the pattern?"""
+        if '#' in pattern and not pattern.endswith('#'):
+            return False
+        return any(filter(lambda x: x == '+' or x == '#', pattern.split('/')))
+
     def _matches(self, pattern, event):
-        """
-        Check that 'a/#/b/#/c' pattern matches '/a/x/b/x/c'
-        """
+        "Check that 'a/#/b/#/c' pattern matches '/a/x/b/x/c'"
+
+        if '#' in pattern and not pattern.endswith('#'):
+            raise PatternException
 
         ps, es = pattern.split('/'), event.split('/')
-        return all([x == y or x == '#' for x, y in zip(ps, es)]) and len(ps) <= len(es)
+        return all([x == y or x == '+' or (x == '#' and len(ps) <= len(es)) for x, y in zip(ps, es)]) and len(ps) <= len(es)
 
     def once(self, event, f=None):
         """The same as ``ee.on``, except that the listener is automatically
@@ -166,7 +177,7 @@ class EventEmitter(object):
         style is.)
 
         """
-        if '#' in event:
+        if self._isPattern(event):
             self._patterns[event].remove(f)
         else:
             self._events[event].remove(f)
@@ -188,7 +199,7 @@ class EventEmitter(object):
     def listeners(self, event):
         """Returns the list of all listeners registered to the ``event``.
         """
-        return self._events[event] if not '#' in event else self._patterns[event]
+        return self._events[event] if not self._isPattern(event) else self._patterns[event]
 
 # Backwards compatiblity
 Event_emitter = EventEmitter

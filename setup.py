@@ -3,14 +3,14 @@
 from distutils.core import setup
 
 setup(
-    name = "pyee",
-    version = "0.0.8",
+    name = "pyee-topics",
+    version = "0.0.11",
     packages = ["pyee"],
-    description = "A port of node.js's EventEmitter to python.",
-    author = "Joshua Holbrook",
-    author_email = "josh.holbrook@gmail.com",
-    url = "https://github.com/jesusabdullah/pyee",
-    keywords = ["events", "emitter", "node.js", "node", "eventemitter", "event_emitter"],
+    description = "A port of node.js's EventEmitter to python with mqtt topics support.",
+    author = "Joseph Piron (Joshua Holbrook)",
+    author_email = "joseph.piron@gmail.com (josh.holbrook@gmail.com)",
+    url = "https://github.com/eagleamon/pyee-topics",
+    keywords = ["events", "emitter", "node.js", "node", "eventemitter", "event_emitter", "mqtt", "patterns", "topics"],
     classifiers = [
         "Programming Language :: Python",
         "Development Status :: 2 - Pre-Alpha",
@@ -36,17 +36,19 @@ Example
 
     In [2]: ee = EventEmitter()
 
-    In [3]: @ee.on('event')
+    In [3]: @ee.on('a/#/c')
        ...: def event_handler():
        ...:     print 'BANG BANG'
        ...:
 
-    In [4]: ee.emit('event')
+    In [4]: ee.emit('a/b/c')
     BANG BANG
 
     In [5]:
 
 Easy-peasy.
+
+There is the possibility to use mqtt topic patterns to match events
 
 For more, visit <https://github.com/jesusabdullah/pyee> .
 

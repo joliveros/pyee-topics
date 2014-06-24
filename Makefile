@@ -10,3 +10,6 @@ publish:
 
 tests:
 	nosetests -v
+
+clean:
+	rm -rf dist MANIFEST README

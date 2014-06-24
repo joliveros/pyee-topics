@@ -28,7 +28,7 @@ Example:
 
     In [5]:
 
-    In [6]: ee.on('a/#/c', lambda ...)
+    In [6]: ee.on('a/+/c', lambda ...)
 
 Easy-peasy.
 
