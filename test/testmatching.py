@@ -4,8 +4,6 @@ import nose.tools as nt
 from pyee import Event_emitter, EventEmitter, PatternException
 from tests import ItWorkedException
 
-import q
-
 
 def test_is_pattern():
     ee = EventEmitter()
@@ -38,7 +36,7 @@ def test_matching_topic():
         raise ItWorkedException
 
     with nt.assert_raises(ItWorkedException) as it_worked:
-        q | ee.emit('event/first/ok')
+        ee.emit('event/first/ok')
 
     with nt.assert_raises(ItWorkedException) as it_worked:
         ee.emit('event/second/ok')

@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import os
 from distutils.core import setup
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
     name = "pyee-topics",
-    version = "0.0.11",
+    version = "0.0.12",
     packages = ["pyee"],
     description = "A port of node.js's EventEmitter to python with mqtt topics support.",
     author = "Joseph Piron (Joshua Holbrook)",
@@ -20,37 +24,5 @@ setup(
         "Programming Language :: Python :: 2.7", #only one tested
         "Topic :: Other/Nonlisted Topic"
     ],
-    long_description = """\
-pyee
-======
-
-pyee supplies an event_emitter object that acts similar to the `EventEmitter`
-that comes with node.js.
-
-Example
--------
-
-::
-
-    In [1]: from pyee import EventEmitter
-
-    In [2]: ee = EventEmitter()
-
-    In [3]: @ee.on('a/#/c')
-       ...: def event_handler():
-       ...:     print 'BANG BANG'
-       ...:
-
-    In [4]: ee.emit('a/b/c')
-    BANG BANG
-
-    In [5]:
-
-Easy-peasy.
-
-There is the possibility to use mqtt topic patterns to match events
-
-For more, visit <https://github.com/jesusabdullah/pyee> .
-
-"""
+    long_description = read('README.rst')
 )
