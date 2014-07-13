@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name = "pyee-topics",
-    version = "0.0.12",
+    version = "0.0.13",
     packages = ["pyee"],
     description = "A port of node.js's EventEmitter to python with mqtt topics support.",
     author = "Joseph Piron (Joshua Holbrook)",

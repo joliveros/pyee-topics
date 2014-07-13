@@ -32,7 +32,7 @@ def test_matching_topic():
     ee = Event_emitter()
 
     @ee.on('event/+/ok')
-    def event_handler():
+    def event_handler(ev):
         raise ItWorkedException
 
     with nt.assert_raises(ItWorkedException) as it_worked:
@@ -50,7 +50,7 @@ def test_shorter_pattern():
     ee = EventEmitter()
 
     @ee.on('#')
-    def event_handler():
+    def event_handler(ev):
         raise ItWorkedException
 
     with nt.assert_raises(ItWorkedException) as it_worked:
@@ -66,13 +66,13 @@ def test_longer_pattern():
     ee = EventEmitter()
 
     @ee.on('a/b/#')
-    def event_handler():
+    def event_handler(ev):
         raise ItWorkedException
 
     ee.emit('c')
 
     @ee.on('+/a/b')
-    def event_handler():
+    def event_handler(ev):
         raise ItWorkedException('c and #/a/b')
 
     ee.emit('c')

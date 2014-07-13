@@ -17,7 +17,8 @@ def test_emit():
 
     # Used in a decorator style
     @ee.on('event')
-    def event_handler(data, **kwargs):
+    def event_handler(ev, data, **kwargs):
+        nt.assert_equals(ev, 'event')
         nt.assert_equals(data, 'emitter is emitted!')
         # Raise exception to prove it fired.
         if (kwargs['error']):
@@ -26,32 +27,32 @@ def test_emit():
     # Making sure data is passed propers
     ee.emit('event', 'emitter is emitted!', error=False)
 
-    # Some nose bullshit to check for the firings. 
+    # Some nose bullshit to check for the firings.
     # "Hides" other exceptions.
     with nt.assert_raises(ItWorkedException) as it_worked:
         ee.emit('event', 'emitter is emitted!', error=True)
 
 def test_emit_error():
     ee = EventEmitter()
-    
+
     with nt.assert_raises(Exception):
         ee.emit('error')
 
     @ee.on('error')
-    def onError():
+    def onError(ev):
         pass
-        
+
     # No longer raises and error instead return True indicating handled
     nt.assert_true(ee.emit('error'))
 
 def test_emit_return():
     ee = EventEmitter()
-    
+
     # make sure emitting without a callback returns False
     nt.assert_false(ee.emit('data'))
 
     # add a callback
-    ee.on('data')(lambda: None)
+    ee.on('data')(lambda ev: None)
 
     # should return True now
     nt.assert_true(ee.emit('data'))
@@ -63,15 +64,15 @@ def test_new_listener_event():
     ee = Event_emitter()
 
     @ee.on('new_listener')
-    def new_listener_handler(event, fxn):
+    def new_listener_handler(new_event, event, fxn):
         raise ItWorkedException
 
     with nt.assert_raises(ItWorkedException) as it_worked:
         @ee.on('event')
-        def event_handler(data):
+        def event_handler(ev, data):
             pass
 
-    
+
 def test_listener_removal():
     """Tests that we can remove listeners (as appropriate).
     """
@@ -121,7 +122,7 @@ def test_once():
 
     ee = Event_emitter()
 
-    def once_handler(data, error=None):
+    def once_handler(ev, data, error=None):
         nt.assert_equals(data, 'emitter is emitted!')
         if (error):
             raise ItWorkedException
@@ -139,13 +140,13 @@ def test_once():
 def test_listeners():
     """Test that `listeners()` gives you access to the listeners array.
     """
-    
+
     ee = Event_emitter()
     @ee.on('event')
     def event_handler():
         pass
 
-    def raiser():
+    def raiser(ev):
         raise ItWorkedException
 
     l = ee.listeners('event')

@@ -118,7 +118,7 @@ class EventEmitter(object):
             ee.emit('data', '00101001')
 
         Assuming ``data`` is an attached function, this will call
-        ``data('00101001')'``.
+        ``data('data', '00101001')'``.
 
         """
         handled = False
@@ -126,12 +126,12 @@ class EventEmitter(object):
         for p in self._patterns:
             if self._matches(p, event):
                 for f in self._patterns[p]:
-                    f(*args, **kwargs)
+                    f(event, *args, **kwargs)
                     handled = True
 
         # Pass the args to each function in the events dict
         for f in self._events[event]:
-            f(*args, **kwargs)
+            f(event, *args, **kwargs)
             handled = True
 
         if not handled and event == 'error':
@@ -146,7 +146,7 @@ class EventEmitter(object):
         return any(filter(lambda x: x == '+' or x == '#', pattern.split('/')))
 
     def _matches(self, pattern, event):
-        "Check that 'a/#/b/#/c' pattern matches '/a/x/b/x/c'"
+        "Check that 'a/+/b/+/c' pattern matches '/a/x/b/x/c'"
 
         if '#' in pattern and not pattern.endswith('#'):
             raise PatternException
