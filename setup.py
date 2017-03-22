@@ -8,6 +8,9 @@ README_rst = path.join(path.abspath(path.dirname(__file__)), 'README.rst')
 with open(README_rst, 'r') as f:
     long_description = f.read()
 
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
 setup(
     name="pyee",
     vcversioner={},

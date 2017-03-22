@@ -4,6 +4,7 @@
 pyee supplies an ``EventEmitter`` object similar to the ``EventEmitter``
 from Node.js. It supports both synchronous callbacks and asyncio coroutines.
 
+There is also the possibility to use mqtt topic patterns to match events
 
 Example
 -------
@@ -24,6 +25,11 @@ Example
 
     In [5]:
 
+    In [6]: ee.on('a/#/c', lambda ...)
+
+Easy-peasy.
+
+
 """
 
 try:
@@ -31,6 +37,9 @@ try:
 except ImportError:
     iscoroutine = None
     ensure_future = None
+
+class PatternException(Exception):
+    pass
 
 from collections import defaultdict
 
@@ -43,6 +52,7 @@ class PyeeException(Exception):
 
 
 class EventEmitter(object):
+
     """The EventEmitter class.
 
     For interoperation with asyncio, one can specify the scheduler and
@@ -82,6 +92,10 @@ class EventEmitter(object):
         self._schedule = scheduler
         self._loop = loop
 
+        # Specialised dict for pattern matching topics
+        # This way it will not impact standard behaviour
+        self._patterns = defaultdict(list)
+
     def on(self, event, f=None):
         """Registers the function (or optionally an asyncio coroutine function)
         ``f`` to the event name ``event``.
@@ -111,7 +125,10 @@ class EventEmitter(object):
             self.emit('new_listener', event, f)
 
             # Add the necessary function
-            self._events[event].append(f)
+            if self._isPattern(event):
+                self._patterns[event].append(f)
+            else:
+                self._events[event].append(f)
 
             # Return original function so removal works
             return f
@@ -131,13 +148,21 @@ class EventEmitter(object):
             ee.emit('data', '00101001')
 
         Assuming ``data`` is an attached function, this will call
-        ``data('00101001')'``.
+        ``data('data', '00101001')'``.
 
         For coroutine event handlers, calling emit is non-blocking. In other
         words, you do not have to await any results from emit, and the
         coroutine is scheduled in a fire-and-forget fashion.
         """
         handled = False
+
+        patterns_copy = list(self._patterns)
+        for p in patterns_copy:
+            if self._matches(p, event):
+                for f in self._patterns[p]:
+                    result = f(event, *args, **kwargs)
+                    if iscoroutine and iscoroutine(result):
+                        self.handle_coroutine(result)
 
         # Copy the events dict first. Avoids a bug if the events dict gets
         # changed in the middle of the following for loop.
@@ -147,20 +172,8 @@ class EventEmitter(object):
         for f in events_copy:
             result = f(*args, **kwargs)
             if iscoroutine and iscoroutine(result):
-                if self._loop:
-                    d = self._schedule(result, loop=self._loop)
-                else:
-                    d = self._schedule(result)
-                if hasattr(d, 'add_done_callback'):
-                    @d.add_done_callback
-                    def _callback(f):
-                        exc = f.exception()
-                        if exc:
-                            self.emit('error', exc)
-                elif hasattr(d, 'addErrback'):
-                    @d.addErrback
-                    def _callback(exc):
-                        self.emit('error', exc)
+                self.handle_coroutine(result)
+
             handled = True
 
         if not handled and event == 'error':
@@ -170,6 +183,37 @@ class EventEmitter(object):
                 raise PyeeException("Uncaught, unspecified 'error' event.")
 
         return handled
+
+    def handle_coroutine(self, result):
+        if self._loop:
+                d = self._schedule(result, loop=self._loop)
+        else:
+            d = self._schedule(result)
+        if hasattr(d, 'add_done_callback'):
+            @d.add_done_callback
+            def _callback(f):
+                exc = f.exception()
+                if exc:
+                    self.emit('error', exc)
+        elif hasattr(d, 'addErrback'):
+            @d.addErrback
+            def _callback(exc):
+                self.emit('error', exc)
+
+    def _isPattern(self, pattern):
+        """is there any /+/ or /#/ in the pattern?"""
+        if '#' in pattern and not pattern.endswith('#'):
+            return False
+        return any(filter(lambda x: x == '+' or x == '#', pattern.split('/')))
+
+    def _matches(self, pattern, event):
+        "Check that 'a/+/b/+/c' pattern matches '/a/x/b/x/c'"
+
+        if '#' in pattern and not pattern.endswith('#'):
+            raise PatternException
+
+        ps, es = pattern.split('/'), event.split('/')
+        return all([x == y or x == '+' or (x == '#' and len(ps) <= len(es)) for x, y in zip(ps, es)]) and len(ps) <= len(es)
 
     def once(self, event, f=None):
         """The same as ``ee.on``, except that the listener is automatically
@@ -192,19 +236,30 @@ class EventEmitter(object):
 
     def remove_listener(self, event, f):
         """Removes the function ``f`` from ``event``."""
-        self._events[event].remove(f)
+        if self._isPattern(event):
+            self._patterns[event].remove(f)
+        else:
+            self._events[event].remove(f)
 
     def remove_all_listeners(self, event=None):
         """Remove all listeners attached to ``event``.
         If ``event`` is ``None``, remove all listeners on all events.
         """
         if event is not None:
-            self._events[event] = []
+            if '#' in event:
+                self._patterns[event] = []
+            else:
+                self._events[event] = []
         else:
             self._events = None
+            self._patterns = None
             self._events = defaultdict(list)
+            self._patterns = defaultdict(list)
 
     def listeners(self, event):
         """Returns the list of all listeners registered to the ``event``.
         """
-        return self._events[event]
+        return self._events[event] if not self._isPattern(event) else self._patterns[event]
+
+# Backwards compatiblity
+Event_emitter = EventEmitter

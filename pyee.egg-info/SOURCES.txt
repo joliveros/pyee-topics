@@ -1,0 +1,14 @@
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+version.txt
+pyee/__init__.py
+pyee.egg-info/PKG-INFO
+pyee.egg-info/SOURCES.txt
+pyee.egg-info/dependency_links.txt
+pyee.egg-info/top_level.txt
+tests/conftest.py
+tests/test_async.py
+tests/test_matching.py
+tests/test_sync.py
